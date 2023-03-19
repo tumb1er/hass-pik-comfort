@@ -60,7 +60,7 @@ SERVICE_PUSH_READINGS_SCHEMA = {
     vol.Optional(ATTR_INCREMENTAL, default=False): cv.boolean,
     vol.Optional(ATTR_NOTIFICATION, default=False): vol.Any(
         cv.boolean,
-        persistent_notification.SCHEMA_SERVICE_CREATE,
+        persistent_notification.SCHEMA_SERVICE_NOTIFICATION,
     ),
 }
 
@@ -325,7 +325,7 @@ class PikComfortMeterSensor(BasePikComfortEntity, BinarySensorEntity):
             hass.async_create_task(
                 hass.services.async_call(
                     persistent_notification.DOMAIN,
-                    persistent_notification.SERVICE_CREATE,
+                    persistent_notification.SCHEMA_SERVICE_NOTIFICATION,
                     payload,
                 )
             )
