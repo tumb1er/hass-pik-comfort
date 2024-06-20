@@ -47,7 +47,7 @@
                     "request_new_token": "Request new authentication token",
                     "scan_interval": "Data update interval"
                 },
-                "description": "Current token will expire at: {will_expire_at}"
+                "description": ""
             },
             "otp_input": {
                 "data": {

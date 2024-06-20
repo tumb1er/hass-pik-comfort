@@ -49,7 +49,7 @@
                     "request_new_token": "Запросить новый токен авторизации",
                     "scan_interval": "Интервал обновления данных"
                 },
-                "description": "Срок действия текущего токена истечет: {will_expire_at}"
+                "description": ""
             },
             "otp_input": {
                 "data": {
