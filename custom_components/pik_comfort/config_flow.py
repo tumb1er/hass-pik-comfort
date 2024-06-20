@@ -8,7 +8,9 @@ from typing import Any, ClassVar, Dict, Final, Optional, Tuple
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
-from homeassistant.const import CONF_BASE, CONF_SCAN_INTERVAL, CONF_TOKEN
+from homeassistant.const import (
+    CONF_BASE, CONF_SCAN_INTERVAL, CONF_TOKEN, CONF_PASSWORD
+)
 from homeassistant.data_entry_flow import FlowHandler
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util.dt import as_local
@@ -81,6 +83,7 @@ class _WithOTPInput(FlowHandler, ABC):
         self._device_name: str = get_random_device_name()
         self._phone_number: Optional[str] = None
         self._auth_token: Optional[str] = None
+        self._password: Optional[str] = None
         self._otp_expires_at: Optional[float] = None
 
     @abstractmethod
@@ -146,6 +149,10 @@ class _WithOTPInput(FlowHandler, ABC):
         ttl = await api_object.async_request_otp_code()
         self._otp_expires_at = time() + ttl
 
+    async def _async_request_token(self, api_object: PikComfortAPI) -> None:
+        await api_object.async_authenticate_otp(self._password)
+        self._auth_token = api_object.token
+
     async def _async_test_authentication(self) -> Dict[str, Any]:
         phone_number, auth_token = self._phone_number, self._auth_token
         log_prefix = f"[{mask_username(phone_number)}] "
@@ -154,11 +161,10 @@ class _WithOTPInput(FlowHandler, ABC):
             if not api_object.is_authenticated:
                 _LOGGER.debug(
                     f"[{mask_username(phone_number)}] "
-                    f"Попытка запроса кода подтверждения СМС"
+                    f"Попытка запроса токена"
                 )
 
-                await self._async_request_otp_code(api_object)
-                return await self.async_step_otp_input()
+                await self._async_request_token(api_object)
 
             _LOGGER.debug(
                 log_prefix + "Попытка авторизации с помощью "
@@ -219,7 +225,8 @@ class PikComfortConfigFlow(ConfigFlow, _WithOTPInput, domain=DOMAIN):
                 errors[CONF_PHONE_NUMBER] = "phone_number_invalid"
             else:
                 self._device_name = user_input[CONF_DEVICE_NAME]
-                self._auth_token = (user_input.get(CONF_TOKEN) or "").strip() or None
+                self._password = user_input[CONF_PASSWORD]
+                self._auth_token = None
                 self._phone_number = phone_number
 
                 try:
@@ -237,7 +244,10 @@ class PikComfortConfigFlow(ConfigFlow, _WithOTPInput, domain=DOMAIN):
                         CONF_PHONE_NUMBER,
                         default=(user_input or {}).get(CONF_PHONE_NUMBER),
                     ): cv.string,
-                    vol.Optional(CONF_TOKEN): str,
+                    vol.Required(
+                        CONF_PASSWORD,
+                        default=(user_input or {}).get(CONF_PASSWORD),
+                    ): cv.string,
                     vol.Required(
                         CONF_DEVICE_NAME,
                         default=self._device_name,

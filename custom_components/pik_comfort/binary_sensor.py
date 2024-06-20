@@ -7,8 +7,8 @@ from homeassistant.components import persistent_notification
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ENTITY_ID
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.typing import HomeAssistantType
 
 from custom_components.pik_comfort._base import (
     BasePikComfortEntity,
@@ -60,13 +60,13 @@ SERVICE_PUSH_READINGS_SCHEMA = {
     vol.Optional(ATTR_INCREMENTAL, default=False): cv.boolean,
     vol.Optional(ATTR_NOTIFICATION, default=False): vol.Any(
         cv.boolean,
-        persistent_notification.SCHEMA_SERVICE_CREATE,
+        persistent_notification.SCHEMA_SERVICE_NOTIFICATION,
     ),
 }
 
 
 async def async_process_update(
-    hass: HomeAssistantType, config_entry_id: str, async_add_entities
+    hass: HomeAssistant, config_entry_id: str, async_add_entities
 ) -> None:
     api_object: PikComfortAPI = hass.data[DOMAIN][config_entry_id]
     entities = hass.data[DATA_ENTITIES][config_entry_id]
@@ -111,7 +111,7 @@ async def async_process_update(
 
 
 async def async_setup_entry(
-    hass: HomeAssistantType, config_entry: ConfigEntry, async_add_entities
+    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
 ) -> bool:
     config_entry_id = config_entry.entry_id
 
@@ -325,7 +325,7 @@ class PikComfortMeterSensor(BasePikComfortEntity, BinarySensorEntity):
             hass.async_create_task(
                 hass.services.async_call(
                     persistent_notification.DOMAIN,
-                    persistent_notification.SERVICE_CREATE,
+                    persistent_notification.SCHEMA_SERVICE_NOTIFICATION,
                     payload,
                 )
             )
